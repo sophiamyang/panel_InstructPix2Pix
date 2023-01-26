@@ -13,8 +13,14 @@ import numpy as np
 model_id = "timbrooks/instruct-pix2pix"
 pipe = StableDiffusionInstructPix2PixPipeline.from_pretrained(model_id, torch_dtype=torch.float16).to("cuda")
 
-def new_image(prompt, image):
-    edit = pipe(prompt, image=image, num_inference_steps=20, image_guidance_scale=1.5, guidance_scale=7).images[0]
+def new_image(prompt, image, image_slider, guidance_slider, step):
+    edit = pipe(
+        prompt, 
+        image=image, 
+        image_guidance_scale=image_slider, 
+        guidance_scale=guidance_slider,
+        num_inference_steps=step, 
+        ).images[0]
     return edit
 
 # Panel widgets 
@@ -50,7 +56,7 @@ def get_conversations(_, img, image_slider, guidance_slider, step, width=600):
         convos.clear()
     if prompt:
         # generate new image
-        image = new_image(prompt, image)
+        image = new_image(prompt, image, image_slider, guidance_slider, step)
         convos.append(
             pn.Row('\U0001F60A', pn.pane.Markdown(prompt, width=600))
         )
