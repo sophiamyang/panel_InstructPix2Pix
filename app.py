@@ -22,7 +22,7 @@ convos = [] # store all panel objects in a list
 image = None
 filename = None
 
-def get_conversations(_):
+def get_conversations(_, img, width=600):
     global image, filename
     prompt = inp.value
     inp.value = ''
@@ -31,7 +31,10 @@ def get_conversations(_):
         filename = fi.filename
         b = io.BytesIO()
         fi.save(b)
-        image = PIL.Image.open(b)
+        image = PIL.Image.open(b).convert('RGB')
+        aspect = image.size[1]/image.size[0]
+        height = int(aspect*width)
+        image = image.resize((width, height), PIL.Image.ANTIALIAS)
         convos.clear()
     if prompt:
         # generate new image
@@ -44,8 +47,8 @@ def get_conversations(_):
         )
     return pn.Column(*convos)
 
-interactive_conversation = pn.bind(get_conversations, button_conversation)
-interactive_upload = pn.bind(pn.pane.PNG, fi)
+interactive_conversation = pn.bind(get_conversations, button_conversation, fi)
+interactive_upload = pn.bind(pn.panel, fi, width=600)
 pn.Column(
     pn.Column(fi, pn.panel(interactive_upload)),
     pn.panel(interactive_conversation, loading_indicator=True),
