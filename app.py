@@ -10,10 +10,10 @@ import torch
 
 from diffusers import StableDiffusionInstructPix2PixPipeline
 
-pn.extension(template='bootstrap')
-pn.state.template.main_max_width = '690px'
-pn.state.template.accent_base_color = '#F08080'
-pn.state.template.header_background = '#F08080'
+pn.extension(template="bootstrap")
+pn.state.template.main_max_width = "690px"
+pn.state.template.accent_base_color = "#F08080"
+pn.state.template.header_background = "#F08080"
 
 
 # Model
@@ -45,9 +45,7 @@ img_guidance = pn.widgets.DiscreteSlider(
 guidance = pn.widgets.DiscreteSlider(
     name="Guidance scale", options=list(np.arange(1, 10.5, 0.5)), value=7
 )
-steps = pn.widgets.IntSlider(
-    name="Inference Steps", start=1, end=100, step=1, value=20
-)
+steps = pn.widgets.IntSlider(name="Inference Steps", start=1, end=100, step=1, value=20)
 run_button = pn.widgets.Button(name="Run!", width=600)
 
 
@@ -55,6 +53,7 @@ run_button = pn.widgets.Button(name="Run!", width=600)
 convos = []  # store all panel objects in a list
 image = None
 filename = None
+
 
 def normalize_image(value, width):
     """
@@ -66,6 +65,7 @@ def normalize_image(value, width):
     height = int(aspect * width)
     return image.resize((width, height), PIL.Image.ANTIALIAS)
 
+
 def get_conversations(_, img, img_guidance, guidance, steps, width=600):
     """
     Get all the conversations in a Panel object
@@ -73,13 +73,13 @@ def get_conversations(_, img, img_guidance, guidance, steps, width=600):
     global image, filename
     prompt_text = prompt.value
     prompt.value = ""
-    
+
     # if the filename changes, open the image again
     if filename != file_input.filename:
         filename = file_input.filename
         image = normalize_image(file_input.value, width)
         convos.clear()
-        
+
     if prompt_text:
         # generate new image
         image = new_image(prompt_text, image, img_guidance, guidance, steps)
@@ -96,10 +96,10 @@ interactive_upload = pn.bind(pn.panel, file_input, width=600)
 
 # layout
 pn.Column(
-    pn.pane.Markdown("## \U0001F60A Upload an image file and start editing!"), 
+    pn.pane.Markdown("## \U0001F60A Upload an image file and start editing!"),
     pn.Column(file_input, pn.panel(interactive_upload)),
     pn.panel(interactive_conversation, loading_indicator=True),
     prompt,
     pn.Row(run_button),
     pn.Card(img_guidance, guidance, steps, width=600, header="Advance settings"),
-).servable(title='Stablel Diffusion InstructPix2pix Image Editing Chatbot')
+).servable(title="Stablel Diffusion InstructPix2pix Image Editing Chatbot")
