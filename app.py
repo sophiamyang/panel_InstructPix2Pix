@@ -17,9 +17,15 @@ pn.state.template.param.update(
 )
 
 model_id = "timbrooks/instruct-pix2pix"
-pipe = StableDiffusionInstructPix2PixPipeline.from_pretrained(
-    model_id, torch_dtype=torch.float16
-).to("cuda")
+
+if 'pipe' in pn.state.cache:
+    pipe = pn.state.cache['pipe']
+else:
+    pipe = pn.state.cache['pipe'] = StableDiffusionInstructPix2PixPipeline.from_pretrained(
+        model_id, torch_dtype=torch.float16
+    ).to("cuda")
+    pipe.enable_xformers_memory_efficient_attention()
+    pipe.unet.to(memory_format=torch.channels_last)
 
 def normalize_image(value, width):
     """
@@ -32,6 +38,9 @@ def normalize_image(value, width):
     return image.resize((width, height), PIL.Image.LANCZOS)
 
 def new_image(prompt, image, img_guidance, guidance, steps, width=600):
+    """
+    create a new image from the StableDiffusionInstructPix2PixPipeline model
+    """
     edit = pipe(
         prompt,
         image=image,
@@ -118,4 +127,4 @@ pn.Column(
     interactive_upload,
     interactive_conversation,
     widgets
-).servable(title="Stable Diffusion InstructPix2pix Image Editing Chatbot")
+).servable(title="Panel Stable Diffusion InstructPix2pix Image Editing Chatbot")
