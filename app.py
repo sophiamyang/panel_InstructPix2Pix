@@ -9,7 +9,7 @@ import torch
 
 from diffusers import StableDiffusionInstructPix2PixPipeline
 
-pn.extension('texteditor', template="bootstrap", sizing_mode='stretch_width')
+pn.extension("texteditor", template="bootstrap", sizing_mode="stretch_width")
 
 pn.state.template.param.update(
     main_max_width="690px",
@@ -17,15 +17,21 @@ pn.state.template.param.update(
 )
 
 model_id = "timbrooks/instruct-pix2pix"
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-if 'pipe' in pn.state.cache:
-    pipe = pn.state.cache['pipe']
+if "pipe" in pn.state.cache:
+    pipe = pn.state.cache["pipe"]
 else:
-    pipe = pn.state.cache['pipe'] = StableDiffusionInstructPix2PixPipeline.from_pretrained(
+    pipe = pn.state.cache[
+        "pipe"
+    ] = StableDiffusionInstructPix2PixPipeline.from_pretrained(
         model_id, torch_dtype=torch.float16
-    ).to("cuda")
+    ).to(
+        device
+    )
     pipe.enable_xformers_memory_efficient_attention()
     pipe.unet.to(memory_format=torch.channels_last)
+
 
 def normalize_image(value, width):
     """
@@ -37,10 +43,8 @@ def normalize_image(value, width):
     height = int(aspect * width)
     return image.resize((width, height), PIL.Image.LANCZOS)
 
+
 def new_image(prompt, image, img_guidance, guidance, steps, width=600):
-    """
-    create a new image from the StableDiffusionInstructPix2PixPipeline model
-    """
     edit = pipe(
         prompt,
         image=image,
@@ -50,10 +54,14 @@ def new_image(prompt, image, img_guidance, guidance, steps, width=600):
     ).images[0]
     return edit
 
+
 file_input = pn.widgets.FileInput(width=600)
 
 prompt = pn.widgets.TextEditor(
-    value="", placeholder="Enter image editing instruction here...", height=160, toolbar=False
+    value="",
+    placeholder="Enter image editing instruction here...",
+    height=160,
+    toolbar=False,
 )
 img_guidance = pn.widgets.DiscreteSlider(
     name="Image guidance scale", options=list(np.arange(1, 10.5, 0.5)), value=1.5
@@ -61,23 +69,22 @@ img_guidance = pn.widgets.DiscreteSlider(
 guidance = pn.widgets.DiscreteSlider(
     name="Guidance scale", options=list(np.arange(1, 10.5, 0.5)), value=7
 )
-steps = pn.widgets.IntSlider(
-    name="Inference Steps", start=1, end=100, step=1, value=20
-)
+steps = pn.widgets.IntSlider(name="Inference Steps", start=1, end=100, step=1, value=20)
 run_button = pn.widgets.Button(name="Run!")
 
 widgets = pn.Row(
     pn.Column(prompt, run_button, margin=5),
     pn.Card(
-        pn.Column(img_guidance, guidance, steps),
-        title="Advanced settings", margin=10
-    ), width=600
+        pn.Column(img_guidance, guidance, steps), title="Advanced settings", margin=10
+    ),
+    width=600,
 )
 
 # define global variables to keep track of things
 convos = []  # store all panel objects in a list
 image = None
 filename = None
+
 
 def get_conversations(_, img, img_guidance, guidance, steps, width=600):
     """
@@ -96,27 +103,27 @@ def get_conversations(_, img, img_guidance, guidance, steps, width=600):
     # if there is a prompt run output
     if prompt_text:
         image = new_image(prompt_text, image, img_guidance, guidance, steps)
-        convos.extend([
-            pn.Row(
-                pn.panel("\U0001F60A", width=10),
-                prompt_text,
-                width=600
-            ),
-            pn.Row(
-                pn.panel(image, align='end', width=500),
-                pn.panel("\U0001F916", width=10),
-                align='end'
-            )
-        ])
+        convos.extend(
+            [
+                pn.Row(pn.panel("\U0001F60A", width=10), prompt_text, width=600),
+                pn.Row(
+                    pn.panel(image, align="end", width=500),
+                    pn.panel("\U0001F916", width=10),
+                    align="end",
+                ),
+            ]
+        )
     return pn.Column(*convos, margin=15, width=575)
 
+
 # bind widgets to functions
-interactive_upload = pn.panel(pn.bind(pn.panel, file_input, width=575, min_height=400, margin=15))
+interactive_upload = pn.panel(
+    pn.bind(pn.panel, file_input, width=575, min_height=400, margin=15)
+)
 
 interactive_conversation = pn.panel(
-    pn.bind(
-        get_conversations, run_button, file_input, img_guidance, guidance, steps
-    ), loading_indicator=True
+    pn.bind(get_conversations, run_button, file_input, img_guidance, guidance, steps),
+    loading_indicator=True,
 )
 
 
@@ -126,5 +133,5 @@ pn.Column(
     file_input,
     interactive_upload,
     interactive_conversation,
-    widgets
+    widgets,
 ).servable(title="Panel Stable Diffusion InstructPix2pix Image Editing Chatbot")
